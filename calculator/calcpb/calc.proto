@@ -12,6 +12,16 @@ message CalcResponse {
     int32 sum = 1;
 }
 
+message PrimeRequest {
+    int32 number = 1;
+}
+
+message PrimeResponse {
+    int32 prime_factor = 2;
+}
+
 service Calc {
     rpc Sum(CalcRequest) returns (CalcResponse) {}
+
+    rpc Prime(PrimeRequest) returns (stream PrimeResponse) {};
 }

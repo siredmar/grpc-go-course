@@ -19,6 +19,28 @@ func (*server) Sum(ctx context.Context, req *calcpb.CalcRequest) (*calcpb.CalcRe
 	return result, nil
 }
 
+func (*server) Prime(req *calcpb.PrimeRequest, stream calcpb.Calc_PrimeServer) error {
+	fmt.Printf("got server streaming request: %v\n", req)
+	number := req.GetNumber()
+	if number < 0 {
+		return fmt.Errorf("Cannot use %v as valid prime factor number\n", number)
+	}
+
+	var k int32 = 2
+
+	for number > 1 {
+		if number%k == 0 { // if k evenly divides into N
+			stream.Send(&calcpb.PrimeResponse{
+				PrimeFactor: k,
+			})
+			number = number / k // divide N by k so that we have the rest of the number left.
+		} else {
+			k = k + 1
+		}
+	}
+	return nil
+}
+
 func main() {
 	fmt.Println("Running calc server")
 

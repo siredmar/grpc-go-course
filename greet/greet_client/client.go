@@ -21,7 +21,8 @@ func main() {
 	c := greetpb.NewGreetServiceClient(conn)
 	fmt.Println("connected")
 	// doUnary(c)
-	doServerStreaming(c)
+	// doServerStreaming(c)
+	doClientStreaming(c)
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
@@ -62,4 +63,43 @@ func doServerStreaming(c greetpb.GreetServiceClient) {
 		}
 		fmt.Println(msg.GetResult())
 	}
+}
+
+func doClientStreaming(c greetpb.GreetServiceClient) {
+	requests := []greetpb.LongGreetRequest{
+		greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Edmar",
+			},
+		},
+		greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Wollnik",
+			},
+		},
+		greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Wollmar",
+			},
+		},
+		greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Ehrenfried",
+			},
+		},
+	}
+
+	client, err := c.LongGreet(context.Background())
+	if err != nil {
+		log.Printf("Cannot perform LongGreet: %v", err)
+	}
+	for _, req := range requests {
+		client.Send(&req)
+	}
+
+	res, err := client.CloseAndRecv()
+	if err != nil {
+		log.Printf("Error receiving server response: %v", err)
+	}
+	fmt.Println(res.GetResult())
 }
