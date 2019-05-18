@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 
 	"github.com/siredmar/grpc-go-course/calculator/calcpb"
 	"google.golang.org/grpc"
@@ -45,4 +46,21 @@ func main() {
 		}
 		fmt.Println(res.GetPrimeFactor())
 	}
+
+	averagestream, err := con.Average(context.Background())
+
+	for i := 0; i < 10; i++ {
+		randomnumber := rand.Int31n(10)
+		req := calcpb.AverageRequest{
+			Number: randomnumber,
+		}
+		fmt.Printf("Sending average request with number: %v\n", randomnumber)
+
+		averagestream.Send(&req)
+	}
+	averageres, err := averagestream.CloseAndRecv()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(averageres.GetAverage())
 }
