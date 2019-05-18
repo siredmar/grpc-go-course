@@ -45,7 +45,7 @@ func (*server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
-			stream.SendAndClose(&greetpb.LonGreetResponse{
+			stream.SendAndClose(&greetpb.LongGreetResponse{
 				Result: response,
 			})
 			break
