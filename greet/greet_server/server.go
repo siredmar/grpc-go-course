@@ -58,6 +58,29 @@ func (*server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
 	return nil
 }
 
+func (*server) ManyGreets(stream greetpb.GreetService_ManyGreetsServer) error {
+	fmt.Println("ManyGreets request called")
+	response := ""
+	for {
+		req, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				// Client stopped connection
+				break
+			} else {
+				return fmt.Errorf("Error: %v", err)
+			}
+		}
+		fmt.Printf("ManyGreets request received: %v\n", req.GetGreeting().FirstName)
+		response += "Hello " + req.GetGreeting().GetFirstName() + "! "
+		senderr := stream.Send(&greetpb.ManyGreetsReply{Result: response})
+		if senderr != nil {
+			fmt.Printf("Error sending respoinse: %v\n", senderr)
+		}
+	}
+	return nil
+}
+
 func main() {
 	fmt.Println("Hello World")
 

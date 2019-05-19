@@ -20,12 +20,14 @@ func main() {
 
 	c := greetpb.NewGreetServiceClient(conn)
 	fmt.Println("connected")
-	// doUnary(c)
-	// doServerStreaming(c)
+	doUnary(c)
+	doServerStreaming(c)
 	doClientStreaming(c)
+	doBidirectionalStreaming(c)
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
+	fmt.Println("------- Do Unary ----------------------")
 	req := &greetpb.GreetingRequest{
 		Greeting: &greetpb.Greeting{
 			FirstName: "Edmar",
@@ -41,6 +43,7 @@ func doUnary(c greetpb.GreetServiceClient) {
 }
 
 func doServerStreaming(c greetpb.GreetServiceClient) {
+	fmt.Println("------- Do Server Streaming------------")
 	req := &greetpb.GreetManyTimesRequest{
 		Greeting: &greetpb.Greeting{
 			FirstName: "Edmar",
@@ -66,6 +69,7 @@ func doServerStreaming(c greetpb.GreetServiceClient) {
 }
 
 func doClientStreaming(c greetpb.GreetServiceClient) {
+	fmt.Println("------- Do Client Streaming------------")
 	requests := []greetpb.LongGreetRequest{
 		greetpb.LongGreetRequest{
 			Greeting: &greetpb.Greeting{
@@ -102,4 +106,65 @@ func doClientStreaming(c greetpb.GreetServiceClient) {
 		log.Printf("Error receiving server response: %v", err)
 	}
 	fmt.Println(res.GetResult())
+
+}
+
+func doBidirectionalStreaming(c greetpb.GreetServiceClient) {
+	fmt.Println("------- Do Bidirectional Streaming-----")
+	client, err := c.ManyGreets(context.Background())
+	if err != nil {
+		log.Printf("Cannot perform LongGreet: %v", err)
+	}
+	waitc := make(chan bool)
+
+	go func() {
+		requests := []greetpb.ManyGreetsRequest{
+			greetpb.ManyGreetsRequest{
+				Greeting: &greetpb.Greeting{
+					FirstName: "Edmar",
+				},
+			},
+			greetpb.ManyGreetsRequest{
+				Greeting: &greetpb.Greeting{
+					FirstName: "Wollnik",
+				},
+			},
+			greetpb.ManyGreetsRequest{
+				Greeting: &greetpb.Greeting{
+					FirstName: "Wollmar",
+				},
+			},
+			greetpb.ManyGreetsRequest{
+				Greeting: &greetpb.Greeting{
+					FirstName: "Ehrenfried",
+				},
+			},
+		}
+
+		for _, req := range requests {
+			err := client.Send(&req)
+			if err != nil {
+				fmt.Printf("Error sending request: %v\n", err)
+			}
+		}
+		client.CloseSend()
+	}()
+
+	go func() {
+		for {
+			res, err := client.Recv()
+			if err != nil {
+				if err == io.EOF {
+					// server stopped streaming
+					break
+				} else {
+					fmt.Printf("Error receiving: %v\n", err)
+				}
+			}
+			fmt.Println(res.GetResult())
+		}
+		close(waitc)
+	}()
+
+	<-waitc
 }
